@@ -18,6 +18,8 @@ jobs:
       contents: write
 
     env:
+      # Opt into Node.js 24 ahead of the June 2026 GitHub Actions deadline.
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       # Used ONLY as the gate for the signing step below.
       # The actual signing secrets are deliberately NOT set here — Tauri v2 reads
       # APPLE_CERTIFICATE / APPLE_SIGNING_IDENTITY / etc. directly from the
