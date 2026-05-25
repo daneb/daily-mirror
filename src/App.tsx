@@ -47,13 +47,10 @@ const SEED_HISTORY: HistoryEntry[] = [
   { id:'h8', name:"Mom's birthday weekend",      completed:Date.now()-86400000*48, priority:'steady' as Priority },
   { id:'h9', name:'Onboarding redesign',         completed:Date.now()-86400000*56, priority:'important' as Priority },
 ];
-const SEED_HABITS: Habit[] = [
-  { id:'h-a', name:'40 minutes of chess study' },
-  { id:'h-b', name:'Read 30 pages, away from screens' },
-  { id:'h-c', name:'Krav Maga with the kids' },
-  { id:'h-d', name:'One real conversation with Sara' },
-  { id:'h-e', name:'Walk before lunch — no podcasts' },
-];
+// Habits are per-day-of-week: "0" = Sun, "1" = Mon, …, "6" = Sat.
+// Each day carries its own independent list; editing Monday never touches Tuesday.
+// Seed with an empty record so first-time users set up each day themselves.
+const SEED_HABITS: Record<string, Habit[]> = {};
 const SEED_BACKLOG: BacklogItem[] = [
   { id:'b1',  text:'Buy milk and oat flour',                           status:'open',     added:Date.now()-3600000*4 },
   { id:'b2',  text:'Email Marco re: quarterly review feedback',        status:'open',     added:Date.now()-86400000*1 },
@@ -81,7 +78,7 @@ export default function App() {
   const [view, setView] = useState<View>('projects');
   const [projects,   setProjects]   = useLocalStorage<Project[]>('projects', SEED_PROJECTS);
   const [history,    setHistory]    = useLocalStorage<HistoryEntry[]>('history', SEED_HISTORY);
-  const [habits,     setHabits]     = useLocalStorage<Habit[]>('habits', SEED_HABITS);
+  const [habits,     setHabits]     = useLocalStorage<Record<string, Habit[]>>('habits-v2', SEED_HABITS);
   const [completion, setCompletion] = useLocalStorage<Completion>('completion', {});
   const [backlog,    setBacklog]    = useLocalStorage<BacklogItem[]>('backlog', SEED_BACKLOG);
 
