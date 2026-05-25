@@ -17,27 +17,14 @@ jobs:
     permissions:
       contents: write
 
-    # Secrets are hoisted to job-level env so that step `if:` conditions
-    # can reference them via env.* (secrets.* is not allowed in if expressions).
-    #
-    # To enable code signing, add these repo secrets
-    # (Settings → Secrets and variables → Actions):
-    #   APPLE_CERTIFICATE          base64-encoded .p12 cert
-    #                              → base64 -i cert.p12 | pbcopy
-    #   APPLE_CERTIFICATE_PASSWORD .p12 export password
-    #   KEYCHAIN_PASSWORD          any random string for the temp keychain
-    #   APPLE_SIGNING_IDENTITY     "Developer ID Application: Your Name (TEAMID)"
-    #   APPLE_ID                   your@apple-id.com
-    #   APPLE_PASSWORD             app-specific password from appleid.apple.com
-    #   APPLE_TEAM_ID              10-char team ID from developer.apple.com
     env:
-      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      # Used ONLY as the gate for the signing step below.
+      # The actual signing secrets are deliberately NOT set here — Tauri v2 reads
+      # APPLE_CERTIFICATE / APPLE_SIGNING_IDENTITY / etc. directly from the
+      # environment and will attempt (and fail) to codesign even when the values
+      # are empty strings. Instead, they are written to $GITHUB_ENV inside the
+      # signing step so they only exist in the environment when a cert is present.
+      HAS_SIGNING: ${{ secrets.APPLE_CERTIFICATE != '' }}
 
     steps:
       # ── Checkout ─────────────────────────────────────────────────
@@ -60,9 +47,26 @@ jobs:
         with:
           workspaces: src-tauri
 
-      # ── Apple code signing (skipped if secrets are absent) ────────
+      # ── Apple code signing ────────────────────────────────────────
+      # Skipped entirely when APPLE_CERTIFICATE secret is absent.
+      # On success, writes signing vars into $GITHUB_ENV so tauri-action
+      # can pick them up. They never exist in the environment otherwise.
+      #
+      # To enable signing, add these repo secrets
+      # (Settings → Secrets and variables → Actions):
+      #   APPLE_CERTIFICATE          base64-encoded .p12  →  base64 -i cert.p12 | pbcopy
+      #   APPLE_CERTIFICATE_PASSWORD .p12 export password
+      #   KEYCHAIN_PASSWORD          any random string for the temp keychain
+      #   APPLE_SIGNING_IDENTITY     "Developer ID Application: Your Name (TEAMID)"
+      #   APPLE_ID                   your@apple-id.com
+      #   APPLE_PASSWORD             app-specific password from appleid.apple.com
+      #   APPLE_TEAM_ID              10-char team ID from developer.apple.com
       - name: Import Apple certificate
-        if: ${{ env.APPLE_CERTIFICATE != '' }}
+        if: ${{ env.HAS_SIGNING == 'true' }}
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
           echo "$APPLE_CERTIFICATE" | base64 --decode > $RUNNER_TEMP/cert.p12
@@ -75,15 +79,27 @@ jobs:
             -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security list-keychain -d user -s "$KEYCHAIN_PATH"
 
+          # Expose signing vars to subsequent steps only when a cert exists
+          echo "APPLE_SIGNING_IDENTITY=${{ secrets.APPLE_SIGNING_IDENTITY }}" >> $GITHUB_ENV
+          echo "APPLE_ID=${{ secrets.APPLE_ID }}"                             >> $GITHUB_ENV
+          echo "APPLE_PASSWORD=${{ secrets.APPLE_PASSWORD }}"                 >> $GITHUB_ENV
+          echo "APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}"                   >> $GITHUB_ENV
+
       # ── Install JS dependencies ───────────────────────────────────
       - name: Install dependencies
         run: npm ci
 
-      # ── Build & publish release ───────────────────────────────────
+      # ── Frontend build ────────────────────────────────────────────
+      - name: Build frontend
+        run: npm run build
+
+      # ── Tauri build & publish release ────────────────────────────
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # APPLE_SIGNING_IDENTITY / APPLE_ID / APPLE_PASSWORD / APPLE_TEAM_ID
+          # are only present here if the signing step above ran successfully.
         with:
           tagName: ${{ github.event.inputs.tag || github.ref_name }}
           releaseName: Daily Mirror ${{ github.event.inputs.tag || github.ref_name }}
@@ -98,3 +114,4 @@ jobs:
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: false
+          args: --bundles dmg
