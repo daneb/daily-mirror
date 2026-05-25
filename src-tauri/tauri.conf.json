@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "daily-mirror",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "identifier": "com.danebalia.daily-mirror",
   "build": {
     "frontendDist": "../dist",
