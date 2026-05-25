@@ -17,8 +17,30 @@ jobs:
     permissions:
       contents: write
 
+    # Secrets are hoisted to job-level env so that step `if:` conditions
+    # can reference them via env.* (secrets.* is not allowed in if expressions).
+    #
+    # To enable code signing, add these repo secrets
+    # (Settings → Secrets and variables → Actions):
+    #   APPLE_CERTIFICATE          base64-encoded .p12 cert
+    #                              → base64 -i cert.p12 | pbcopy
+    #   APPLE_CERTIFICATE_PASSWORD .p12 export password
+    #   KEYCHAIN_PASSWORD          any random string for the temp keychain
+    #   APPLE_SIGNING_IDENTITY     "Developer ID Application: Your Name (TEAMID)"
+    #   APPLE_ID                   your@apple-id.com
+    #   APPLE_PASSWORD             app-specific password from appleid.apple.com
+    #   APPLE_TEAM_ID              10-char team ID from developer.apple.com
+    env:
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
     steps:
-      # ── Checkout ────────────────────────────────────────────────
+      # ── Checkout ─────────────────────────────────────────────────
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -38,23 +60,9 @@ jobs:
         with:
           workspaces: src-tauri
 
-      # ── Apple code signing (skipped if secrets are absent) ───────
-      # To enable signing:
-      #   1. Export your Developer ID Application cert as a .p12 from Keychain Access
-      #   2. base64-encode it:  base64 -i cert.p12 | pbcopy
-      #   3. Add these repo secrets (Settings → Secrets → Actions):
-      #        APPLE_CERTIFICATE          base64-encoded .p12
-      #        APPLE_CERTIFICATE_PASSWORD .p12 export password
-      #        APPLE_SIGNING_IDENTITY     "Developer ID Application: Your Name (TEAMID)"
-      #        APPLE_ID                   your@apple-id.com
-      #        APPLE_PASSWORD             app-specific password from appleid.apple.com
-      #        APPLE_TEAM_ID              10-char team ID from developer.apple.com
+      # ── Apple code signing (skipped if secrets are absent) ────────
       - name: Import Apple certificate
-        if: ${{ secrets.APPLE_CERTIFICATE != '' }}
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        if: ${{ env.APPLE_CERTIFICATE != '' }}
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
           echo "$APPLE_CERTIFICATE" | base64 --decode > $RUNNER_TEMP/cert.p12
@@ -76,13 +84,6 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Signing — only used when secrets are present
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.event.inputs.tag || github.ref_name }}
           releaseName: Daily Mirror ${{ github.event.inputs.tag || github.ref_name }}
