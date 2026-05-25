@@ -1,73 +1,56 @@
-# React + TypeScript + Vite
+# Daily Mirror
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A personal desktop companion for working with intention. Three views, nothing more.
 
-Currently, two official plugins are available:
+![Daily Mirror — Projects](docs/01-projects.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## What it is
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Daily Mirror is a macOS app built around a single idea: calm, directed effort on the things that matter.
 
-## Expanding the ESLint configuration
+It doesn't try to be a full task manager. It holds the heavy things so your mind doesn't have to.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+**Projects** — the five or six things that are genuinely consuming you right now. Track weight, priority, and completion. A quiet history of everything you've put down.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+**Daily Focus** — a fixed set of strategic habits, tracked per day. Chess, exercise, family time — the recurring things that make the rest possible. Mark what you nailed. Close the day with intent.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+**Backlog** — everything else, out of your head. Add it fast, filter it, mark it done or archive it. A bullet journal in app form.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## Install
+
+Download `daily-mirror_*_aarch64.dmg` from the [latest release](../../releases/latest), open it, drag **Daily Mirror** to Applications.
+
+**First launch note:** the app is unsigned. macOS will block it. Run this once in Terminal:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/daily-mirror.app"
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Then open normally.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Views
+
+| | |
+|---|---|
+| ![Projects](docs/01-projects.png) | ![Daily Focus](docs/02-daily-focus.png) |
+| Projects | Daily Focus |
+| ![Backlog](docs/03-backlog.png) | |
+| Backlog | |
+
+---
+
+## Stack
+
+- [Tauri v2](https://tauri.app) · [React 19](https://react.dev) · [Vite](https://vite.dev) · TypeScript
+- All data stored locally in `localStorage` — no accounts, no sync, no cloud
+- macOS only (Apple Silicon)
+
+---
+
+*Built for one person. Kept simple on purpose.*
