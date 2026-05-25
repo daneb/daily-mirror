@@ -6,6 +6,22 @@ import { Editable } from '../components/Editable';
 const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const DAY_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
+/** Returns the seven Date objects for the current week (Sun–Sat). */
+function getWeekDates(): Date[] {
+  const today = new Date();
+  const todayDow = today.getDay(); // 0 = Sun
+  return DAY_LABELS.map((_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + (i - todayDow));
+    return d;
+  });
+}
+
+/** YYYY-MM-DD key for a given Date — uniquely identifies a calendar day. */
+function toDateKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
 interface DailyFocusProps {
   habits: Habit[];
   setHabits: Dispatch<SetStateAction<Habit[]>>;
@@ -16,8 +32,9 @@ interface DailyFocusProps {
 
 export function DailyFocus({ habits, setHabits, completion, setCompletion, habitStyle }: DailyFocusProps) {
   const today = new Date();
+  const weekDates = getWeekDates(); // [Sun, Mon, …, Sat] for the current week
   const [dayIdx, setDayIdx] = useState(today.getDay());
-  const dayKey = `d${dayIdx}`;
+  const dayKey = toDateKey(weekDates[dayIdx]); // e.g. "2026-05-25"
 
   function toggle(id: string) {
     setCompletion(c => {
@@ -38,7 +55,8 @@ export function DailyFocus({ habits, setHabits, completion, setCompletion, habit
 
   const dayCompletion = completion[dayKey] ?? {};
   const doneCount = habits.filter(h => dayCompletion[h.id]).length;
-  const isToday = dayIdx === today.getDay();
+  const todayKey = toDateKey(today);
+  const isToday = dayKey === todayKey;
 
   return (
     <div className="fade-in stack">

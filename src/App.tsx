@@ -82,7 +82,7 @@ export default function App() {
   const [projects,   setProjects]   = useLocalStorage<Project[]>('projects', SEED_PROJECTS);
   const [history,    setHistory]    = useLocalStorage<HistoryEntry[]>('history', SEED_HISTORY);
   const [habits,     setHabits]     = useLocalStorage<Habit[]>('habits', SEED_HABITS);
-  const [completion, setCompletion] = useLocalStorage<Completion>('completion', { ['d' + new Date().getDay()]: { 'h-a': true } });
+  const [completion, setCompletion] = useLocalStorage<Completion>('completion', {});
   const [backlog,    setBacklog]    = useLocalStorage<BacklogItem[]>('backlog', SEED_BACKLOG);
 
   useEffect(() => { applyPalette(tweaks.palette); }, [tweaks.palette]);
